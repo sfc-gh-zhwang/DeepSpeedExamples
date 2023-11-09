@@ -223,7 +223,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
 
 
     try:
-        with multiprocessing.Manager() as manager:
+        # with multiprocessing.Manager() as manager:
             per_client_processes = []
             while not query_queue.empty():
                 print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
