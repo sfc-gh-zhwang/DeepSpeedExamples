@@ -122,6 +122,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
         end_time=time.time(),
         model_time=0,
         token_gen_time=token_gen_time)
+    print(r)
     if result_queue:
         result_queue.put(r)
 
