@@ -232,9 +232,14 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
                     # r = call_vllm(input_tokens, req_max_new_tokens)
                     pass
                 else:
-                    per_client_processes.append(multiprocessing.Process(
+                    p = multiprocessing.Process(
                         target=call_mii, args=(client, input_tokens, req_max_new_tokens, stream, result_queue)
-                    ))
+                    )
+                    per_client_processes.append(p)
+            for process in per_client_processes:
+                process.start()
+            for process in per_client_processes:
+                process.join()
     except queue.Empty:
         print(f"queue is empty ({pid})")
 
