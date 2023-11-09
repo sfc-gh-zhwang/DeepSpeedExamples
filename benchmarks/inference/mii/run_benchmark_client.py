@@ -273,11 +273,12 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     query_queue = queue_cls()
     result_queue = queue_cls()
 
-    processes = [runnable_cls(target=_run_parallel,
-                              args=(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm))
-                 for i in range(client_num)]
-    for p in processes:
-        p.start()
+    # processes = [runnable_cls(target=_run_parallel,
+    #                           args=(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm))
+    #              for i in range(client_num)]
+    # for p in processes:
+    #     p.start()
+    _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm)
 
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
