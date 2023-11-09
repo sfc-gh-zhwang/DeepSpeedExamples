@@ -237,6 +237,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
                     )
                     per_client_processes.append(p)
                     p.start()
+            print('done')
             for process in per_client_processes:
                 process.join()
     except queue.Empty:
