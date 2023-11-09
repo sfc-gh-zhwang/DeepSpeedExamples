@@ -72,6 +72,7 @@ def parse_args():
 
 
 def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
+    print('call mii')
     output_tokens = []
     token_gen_time = []
     time_last_token = 0
