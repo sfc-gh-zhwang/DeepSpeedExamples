@@ -290,10 +290,12 @@ if __name__ == "__main__":
     if args.out_json_path is not None and not args.out_json_path.parent.exists():
         raise ValueError(f"Parent directory of {args.out_json_path}")
 
+    start = time.time()
     response_details = run_client(args.client_num, args.deployment_name,
                             args.prompt_length,
                             args.max_new_tokens, args.num_queries, args.warmup,
                             args.stream, args.vllm, args.use_thread)
+    print(f'latency: {time.time()-start}')
 
     args_dict = vars(args)
     ps = get_summary(args_dict, response_details)
