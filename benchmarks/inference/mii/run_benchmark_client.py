@@ -278,7 +278,6 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     #              for i in range(client_num)]
     # for p in processes:
     #     p.start()
-    _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm)
 
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
@@ -296,9 +295,11 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     # Tokenizers must be initialized after fork.
     # So we need to fork before putting inputs to the queue.
     # We need this barrier to stop child processse from taking inputs before the main process puts them
-    barrier.wait()
+    #barrier.wait()
     # This barrier is to make sure that all clients have finished warmup
-    barrier.wait()
+    #barrier.wait()
+
+    _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm)
 
     response_details = []
     while len(response_details) < num_queries:
