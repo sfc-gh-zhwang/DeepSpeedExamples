@@ -68,10 +68,10 @@ def get_summary(args, response_details):
     throughput = client_num / latency
 
     tokens_per_sec = mean([(len(get_tokenizer().tokenize(r.prompt)) + len(r.generated_tokens)) / (r.end_time - r.start_time) for r in response_details])
-    first_token_latency = mean([r.token_gen_time[0] for r in response_details])
+    first_token_latency = 0  # mean([r.token_gen_time[0] for r in response_details])
 
-    token_gen_latency_flat = reduce(list.__add__, [r.token_gen_time[1:-1] for r in response_details if len(r.token_gen_time) > 2])
-    token_gen_latency = mean([t for t in token_gen_latency_flat])
+    token_gen_latency_flat = 0  # reduce(list.__add__, [r.token_gen_time[1:-1] for r in response_details if len(r.token_gen_time) > 2])
+    token_gen_latency = 0  # mean([t for t in token_gen_latency_flat])
 
     return ProfilingSummary(throughput, latency, token_gen_latency, first_token_latency, tokens_per_sec)
 

@@ -201,7 +201,23 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
 
     barrier.wait()
 
-    time.sleep(random.uniform(0, client_num) * 0.01)
+    # time.sleep(random.uniform(0, client_num) * 0.01)
+    # try:
+    #     while not query_queue.empty():
+    #         print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
+    #         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+
+    #         # Set max_new_tokens following normal distribution
+    #         if vllm:
+    #             r = call_vllm(input_tokens, req_max_new_tokens)
+    #         else:
+    #             r = call_mii(client, input_tokens, req_max_new_tokens, stream)
+
+    #         result_queue.put(r)
+    # except queue.Empty:
+    #     print(f"queue is empty ({pid})")
+
+
     try:
         while not query_queue.empty():
             print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
