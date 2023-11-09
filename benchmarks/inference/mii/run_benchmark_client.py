@@ -71,8 +71,7 @@ def parse_args():
     return args
 
 
-def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
-    print('call mii')
+def call_mii(client, input_tokens, max_new_tokens, stream):
     output_tokens = []
     token_gen_time = []
     time_last_token = 0
@@ -116,16 +115,13 @@ def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
             input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
         output_tokens = result.response[0]
 
-    r = ResponseDetails(
+    return ResponseDetails(
         generated_tokens=output_tokens,
         prompt=input_tokens,
         start_time=start_time,
         end_time=time.time(),
         model_time=0,
         token_gen_time=token_gen_time)
-    print(r)
-    if result_queue:
-        result_queue.put(r)
 
 
 def call_vllm(input_tokens, max_new_tokens, stream=True):
