@@ -192,7 +192,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         import mii
         client = mii.client(deployment_name)
 
-    barrier.wait()
+    #barrier.wait()
 
     for _ in range(warmup):
         print(f"warmup queue size: {query_queue.qsize()} ({pid})", flush=True)
@@ -203,7 +203,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         else:
             call_mii(client, input_tokens, req_max_new_tokens, stream, None)
 
-    barrier.wait()
+    #barrier.wait()
 
     # time.sleep(random.uniform(0, client_num) * 0.01)
     # try:
