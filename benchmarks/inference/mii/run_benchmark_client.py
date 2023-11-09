@@ -233,7 +233,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
                     pass
                 else:
                     p = multiprocessing.Process(
-                        target=call_mii, args=(client, input_tokens, req_max_new_tokens, stream, result_queue)
+                        target=call_mii, args=(client, input_tokens, req_max_new_tokens, stream, result_queue,)
                     )
                     per_client_processes.append(p)
             for process in per_client_processes:
