@@ -71,7 +71,7 @@ def parse_args():
     return args
 
 
-def call_mii(client, input_tokens, max_new_tokens, stream):
+def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
     output_tokens = []
     token_gen_time = []
     time_last_token = 0
@@ -115,13 +115,14 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
             input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
         output_tokens = result.response[0]
 
-    return ResponseDetails(
+    r = ResponseDetails(
         generated_tokens=output_tokens,
         prompt=input_tokens,
         start_time=start_time,
         end_time=time.time(),
         model_time=0,
         token_gen_time=token_gen_time)
+    result_queue.put(r)
 
 
 def call_vllm(input_tokens, max_new_tokens, stream=True):
@@ -219,17 +220,20 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
 
 
     try:
-        while not query_queue.empty():
-            print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
-            input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+        with multiprocessing.Manager():
+            per_client_processes = []
+            while not query_queue.empty():
+                print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
+                input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
 
-            # Set max_new_tokens following normal distribution
-            if vllm:
-                r = call_vllm(input_tokens, req_max_new_tokens)
-            else:
-                r = call_mii(client, input_tokens, req_max_new_tokens, stream)
-
-            result_queue.put(r)
+                # Set max_new_tokens following normal distribution
+                if vllm:
+                    # r = call_vllm(input_tokens, req_max_new_tokens)
+                    pass
+                else:
+                    per_client_processes.append(multiprocessing.Process(
+                        target=call_mii, args=(client, input_tokens, req_max_new_tokens, stream, result_queue)
+                    ))
     except queue.Empty:
         print(f"queue is empty ({pid})")
 
