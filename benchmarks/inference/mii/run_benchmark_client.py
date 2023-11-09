@@ -63,6 +63,11 @@ def parse_args():
     parser.add_argument('-o', '--out_json_path', type=Path, default=None)
 
     args = parser.parse_args()
+
+    print('\n=============== Argument ===============')
+    for key in vars(args):
+        print('{}: {}'.format(key, vars(args)[key]))
+    print('========================================')
     return args
 
 
