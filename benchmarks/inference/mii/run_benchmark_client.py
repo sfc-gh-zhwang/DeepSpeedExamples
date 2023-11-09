@@ -201,7 +201,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
 
     barrier.wait()
 
-    time.sleep(random.uniform(0, client_num) * 0.01)
+    #time.sleep(random.uniform(0, client_num) * 0.01)
     try:
         while not query_queue.empty():
             print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
