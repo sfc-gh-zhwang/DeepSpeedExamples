@@ -122,7 +122,8 @@ def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
         end_time=time.time(),
         model_time=0,
         token_gen_time=token_gen_time)
-    result_queue.put(r)
+    if result_queue:
+        result_queue.put(r)
 
 
 def call_vllm(input_tokens, max_new_tokens, stream=True):
@@ -198,7 +199,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         if vllm:
             call_vllm(input_tokens, req_max_new_tokens, stream)
         else:
-            call_mii(client, input_tokens, req_max_new_tokens, stream)
+            call_mii(client, input_tokens, req_max_new_tokens, stream, None)
 
     barrier.wait()
 
