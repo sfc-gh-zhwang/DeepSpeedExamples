@@ -247,7 +247,8 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     for p in processes:
         p.start()
 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     MAX_PROMPT_LENGTH = 4000
     request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
