@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument('--use_thread', action='store_true',
                         help='use thread to run parallel clients, otherwise use multiprocessing',
                         default=False)
-    parser.add_argument('--stream', action='store_true', default=True)
+    parser.add_argument('--stream', action='store_true', default=False)
     parser.add_argument('--vllm', action='store_true', default=False)
     parser.add_argument('-o', '--out_json_path', type=Path, default=None)
 
