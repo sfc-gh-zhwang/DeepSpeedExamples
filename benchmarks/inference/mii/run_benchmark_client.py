@@ -1,26 +1,25 @@
-import os
-import time
-import random
 import argparse
-import queue
+import asyncio
+import json
 import multiprocessing
+import os
+import queue
+import random
 import threading
-from statistics import mean
-from dataclasses import dataclass, asdict
-from typing import List, Iterable
-from pathlib import Path
+import time
+from dataclasses import asdict, dataclass
 from datetime import datetime
-import numpy as np
+from pathlib import Path
+from statistics import mean
+from typing import Iterable, List
 
-from transformers import AutoTokenizer
+import numpy as np
+import requests
+from postprocess_results import ResponseDetails, get_summary
 from random_query_generator import RandomQueryGenerator
 from sample_input import all_text
-import time
-import json
-import asyncio
-import requests
-
-from postprocess_results import get_summary, ResponseDetails
+from transformers import AutoTokenizer
+from utils import get_prompts
 
 MAX_PROMPT_LENGTH = 4000
 PROMPT_LENGTH_VAR = 0.3
@@ -251,10 +250,14 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     MAX_PROMPT_LENGTH = 4000
-    request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
-
+    #request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
+    warmup_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, warmup*client_num)
+    request_text = warmup_text + get_prompts(num_queries) 
     for t in request_text:
-        req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
+        print(t)
+    for t in request_text:
+        #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
+        req_max_new_tokens = max_new_tokens
         query_queue.put((t, req_max_new_tokens))
 
     # Tokenizers must be initialized after fork.

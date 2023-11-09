@@ -1,14 +1,13 @@
 import argparse
-from pathlib import Path
 import json
-import numpy as np
-from statistics import mean
-from functools import reduce
 from dataclasses import dataclass
+from functools import reduce
+from pathlib import Path
+from statistics import mean
 from typing import List
 
+import numpy as np
 from transformers import AutoTokenizer
-
 
 tokenizer = None
 

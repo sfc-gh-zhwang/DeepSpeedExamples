@@ -1,11 +1,11 @@
 import argparse
 import glob
+import itertools
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
-import itertools
-
-from postprocess_results import read_json, get_token_latency
+from postprocess_results import get_token_latency, read_json
 
 bs = 768
 SKIP_HEAD_TOKEN_NUM = 2

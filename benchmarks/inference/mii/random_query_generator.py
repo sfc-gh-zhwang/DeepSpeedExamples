@@ -1,7 +1,9 @@
-import torch
 import random
-import numpy as np
 import time
+
+import numpy as np
+import torch
+
 
 class RandomQueryGenerator:
     def __init__(self, input_text, tokenizer, seed):

@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-# DeepSpeed Team
-import mii
 import argparse
 
+# DeepSpeed Team
+import mii
+from deepspeed.inference import DeepSpeedTPConfig, RaggedInferenceEngineConfig
+from deepspeed.inference.v2.ragged import DSStateManagerConfig
 from mii.constants import DeploymentType
 
-from deepspeed.inference import RaggedInferenceEngineConfig, DeepSpeedTPConfig
-from deepspeed.inference.v2.ragged import DSStateManagerConfig
 
 def start_server(model_name,
                  deployment_name,
