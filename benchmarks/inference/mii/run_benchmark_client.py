@@ -253,8 +253,7 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     #request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
     warmup_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, warmup*client_num)
     request_text = warmup_text + get_prompts(num_queries) 
-    for t in request_text:
-        print(t)
+    print(f'number of prompts: {len(request_text)}')
     for t in request_text:
         #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
         req_max_new_tokens = max_new_tokens
