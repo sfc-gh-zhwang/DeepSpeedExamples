@@ -192,7 +192,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         import mii
         client = mii.client(deployment_name)
 
-    #barrier.wait()
+    barrier.wait()
 
     for _ in range(warmup):
         print(f"warmup queue size: {query_queue.qsize()} ({pid})", flush=True)
@@ -203,47 +203,24 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         else:
             call_mii(client, input_tokens, req_max_new_tokens, stream, None)
 
-    #barrier.wait()
+    barrier.wait()
 
-    # time.sleep(random.uniform(0, client_num) * 0.01)
-    # try:
-    #     while not query_queue.empty():
-    #         print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
-    #         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
-
-    #         # Set max_new_tokens following normal distribution
-    #         if vllm:
-    #             r = call_vllm(input_tokens, req_max_new_tokens)
-    #         else:
-    #             r = call_mii(client, input_tokens, req_max_new_tokens, stream)
-
-    #         result_queue.put(r)
-    # except queue.Empty:
-    #     print(f"queue is empty ({pid})")
-
-
+    time.sleep(random.uniform(0, client_num) * 0.01)
     try:
-        # with multiprocessing.Manager() as manager:
-            per_client_processes = []
-            while not query_queue.empty():
-                print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
-                input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+        while not query_queue.empty():
+            print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
+            input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
 
-                # Set max_new_tokens following normal distribution
-                if vllm:
-                    # r = call_vllm(input_tokens, req_max_new_tokens)
-                    pass
-                else:
-                    p = multiprocessing.Process(
-                        target=call_mii, args=(client, input_tokens, req_max_new_tokens, stream, result_queue,)
-                    )
-                    p.start()
-                    per_client_processes.append(p)
-            print('done')
-            for process in per_client_processes:
-                process.join()
+            # Set max_new_tokens following normal distribution
+            if vllm:
+                r = call_vllm(input_tokens, req_max_new_tokens)
+            else:
+                r = call_mii(client, input_tokens, req_max_new_tokens, stream)
+
+            result_queue.put(r)
     except queue.Empty:
         print(f"queue is empty ({pid})")
+
 
     print(f"Worker ({pid}) finished. session_id: {session_id}")
 
@@ -273,11 +250,11 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     query_queue = queue_cls()
     result_queue = queue_cls()
 
-    # processes = [runnable_cls(target=_run_parallel,
-    #                           args=(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm))
-    #              for i in range(client_num)]
-    # for p in processes:
-    #     p.start()
+    processes = [runnable_cls(target=_run_parallel,
+                              args=(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm))
+                 for i in range(client_num)]
+    for p in processes:
+        p.start()
 
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
@@ -295,11 +272,9 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     # Tokenizers must be initialized after fork.
     # So we need to fork before putting inputs to the queue.
     # We need this barrier to stop child processse from taking inputs before the main process puts them
-    #barrier.wait()
+    barrier.wait()
     # This barrier is to make sure that all clients have finished warmup
-    #barrier.wait()
-
-    _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm)
+    barrier.wait()
 
     response_details = []
     while len(response_details) < num_queries:
