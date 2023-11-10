@@ -86,14 +86,14 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
 
     postprocess_config = {
         "logit_processor": {
-            # "name": "TopP",
-            # "args": {
-            #     "top_p": 1.0
-            # }
-            "name": "Temperature",
+            "name": "TopP",
             "args": {
-                "temperature": None
+                "top_p": 1.0
             }
+            # "name": "Temperature",
+            # "args": {
+            #     "temperature": None
+            # }
         },
         "sampler": {
             "name": "Logits"
@@ -112,7 +112,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
             streaming_fn=callback)
     else:
         result = client.generate(
-            input_tokens, max_new_tokens=max_new_tokens, top_p=1.0)
+            input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
         output_tokens = result.response[0]
     print(output_tokens)
     return ResponseDetails(
