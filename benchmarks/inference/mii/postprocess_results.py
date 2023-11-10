@@ -60,6 +60,13 @@ def read_json(file_path):
     return args, response_details
 
 
+def calculate_stats(lt):
+    _max = max(lt)
+    _min = min(lt)
+    mean = sum(lt)//len(lt)
+    return f'min: {_min}, max: {_max}, mean: {mean}'
+
+
 def get_summary(args, response_details):
     client_num = args["client_num"]
 
@@ -68,7 +75,7 @@ def get_summary(args, response_details):
     end_time = max([r.end_time for r in response_details])
     latency = max([r.end_time - r.start_time for r in response_details])
     tokens = [len(r.generated_tokens) for r in response_details]
-    print(tokens)
+    print(calculate_stats(tokens))
     # for i in range(len(response_details)):
     #     r = response_details[i]
     #     print(r.start_time, r.end_time, r.start_time-r.end_time)
