@@ -222,15 +222,15 @@ def _run_sequential(deployment_name, warmup, query_queue, result_queue):
     import mii
     client = mii.client(deployment_name)
 
-    for _ in range(warmup):
-        input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
-
+    for i in range(warmup):
+        input_tokens, req_max_new_tokens = query_queue[i]
         call_mii(client, input_tokens, req_max_new_tokens, stream=False)
 
     #time.sleep(random.uniform(0, client_num) * 0.01)
+    query_queue = query_queue[warmup:]
     try:
-        while not query_queue.empty():
-            input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+        for i in range(len(query_queue)):
+            input_tokens, req_max_new_tokens = query_queue[i]
             r = call_mii(client, input_tokens, req_max_new_tokens, stream=False)
             print(r)
             result_queue.put(r)
@@ -249,40 +249,19 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     6. The main process marks the end time after receiving `num_queries' results
     """
 
-    if use_thread:
-        runnable_cls = threading.Thread
-        barrier_cls = threading.Barrier
-        queue_cls = queue.Queue
-    else:
-        runnable_cls = multiprocessing.Process
-        barrier_cls = multiprocessing.Barrier
-        queue_cls = multiprocessing.Queue
-
-    barrier = barrier_cls(client_num + 1)
-    query_queue = queue_cls()
-    result_queue = queue_cls()
-
-    _run_sequential(deployment_name, warmup, query_queue, result_queue)
-
-    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     MAX_PROMPT_LENGTH = 4000
     #request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
     warmup_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, warmup*client_num)
     request_text = warmup_text + get_prompts(num_queries) 
-    print(f'number of prompts: {len(request_text)}')
+    query_queue = []
     for t in request_text:
         #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
         req_max_new_tokens = max_new_tokens
-        query_queue.put((t, req_max_new_tokens))
+        query_queue.append((t, req_max_new_tokens))
 
-    # Tokenizers must be initialized after fork.
-    # So we need to fork before putting inputs to the queue.
-    # We need this barrier to stop child processse from taking inputs before the main process puts them
-    barrier.wait()
-    # This barrier is to make sure that all clients have finished warmup
-    barrier.wait()
+    _run_sequential(deployment_name, warmup, query_queue)
 
     response_details = []
     while len(response_details) < num_queries:
