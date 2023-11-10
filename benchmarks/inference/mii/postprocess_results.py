@@ -67,6 +67,8 @@ def get_summary(args, response_details):
     start_time = min([r.start_time for r in response_details])
     end_time = max([r.end_time for r in response_details])
     latency = max([r.end_time - r.start_time for r in response_details])
+    tokens = [len(r.generated_tokens for r in response_details)]
+    print(tokens)
     # for i in range(len(response_details)):
     #     r = response_details[i]
     #     print(r.start_time, r.end_time, r.start_time-r.end_time)
