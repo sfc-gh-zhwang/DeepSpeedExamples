@@ -71,7 +71,7 @@ def parse_args():
     return args
 
 
-def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
+def call_mii(client, input_tokens, max_new_tokens, stream):
     output_tokens = []
     token_gen_time = []
     time_last_token = 0
@@ -86,14 +86,14 @@ def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
 
     postprocess_config = {
         "logit_processor": {
-            "name": "TopP",
-            "args": {
-                "top_p": 0.9
-            }
-            # "name": "Temperature",
+            # "name": "TopP",
             # "args": {
-            #     "temperature": None
+            #     "top_p": 0.9
             # }
+            "name": "Temperature",
+            "args": {
+                "temperature": 0.9
+            }
         },
         "sampler": {
             "name": "Logits"
@@ -112,19 +112,20 @@ def call_mii(client, input_tokens, max_new_tokens, stream, result_queue):
             streaming_fn=callback)
     else:
         result = client.generate(
-            input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
+            [input_tokens, input_tokens], max_new_tokens=max_new_tokens, top_p=1.0)
+        # result = client.generate(
+        #     input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
+        print(result)
+        print(type(result.response))
         output_tokens = result.response[0]
-    r = ResponseDetails(
+
+    return ResponseDetails(
         generated_tokens=output_tokens,
         prompt=input_tokens,
         start_time=start_time,
         end_time=time.time(),
         model_time=0,
         token_gen_time=token_gen_time)
-    print(r)
-    if result_queue:
-        result_queue.put(r)
-    return r
 
 
 def call_vllm(input_tokens, max_new_tokens, stream=True):
@@ -200,7 +201,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         if vllm:
             call_vllm(input_tokens, req_max_new_tokens, stream)
         else:
-            call_mii(client, input_tokens, req_max_new_tokens, stream, result_queue=None)
+            call_mii(client, input_tokens, req_max_new_tokens, stream)
 
     barrier.wait()
 
@@ -219,30 +220,10 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
             result_queue.put(r)
     except queue.Empty:
         print(f"queue is empty ({pid})")
+
+
     print(f"Worker ({pid}) finished. session_id: {session_id}")
 
-
-def _run_sequential(deployment_name, warmup, query_queue):
-    query_queue = query_queue[warmup:]
-    result_queue = multiprocessing.Queue()
-    import mii
-    with multiprocessing.Manager():
-        processes = []
-        for i in range(len(query_queue)):
-            input_tokens, req_max_new_tokens = query_queue[i]
-            process = multiprocessing.Process(target=call_mii, args=(
-                mii.client(deployment_name),
-                input_tokens,
-                req_max_new_tokens,
-                False,
-                result_queue)
-            )
-            processes.append(process)
-            process.start()
-
-        for process in processes:
-            process.join()
-    return result_queue
 
 def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_queries, warmup, stream, vllm, use_thread=False):
     """
@@ -256,31 +237,55 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     6. The main process marks the end time after receiving `num_queries' results
     """
 
+    if use_thread:
+        runnable_cls = threading.Thread
+        barrier_cls = threading.Barrier
+        queue_cls = queue.Queue
+    else:
+        runnable_cls = multiprocessing.Process
+        barrier_cls = multiprocessing.Barrier
+        queue_cls = multiprocessing.Queue
+
+    barrier = barrier_cls(client_num + 1)
+    query_queue = queue_cls()
+    result_queue = queue_cls()
+
+    processes = [runnable_cls(target=_run_parallel,
+                              args=(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm))
+                 for i in range(client_num)]
+    for p in processes:
+        p.start()
+
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     MAX_PROMPT_LENGTH = 4000
     #request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
     warmup_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, warmup*client_num)
     request_text = warmup_text + get_prompts(num_queries) 
-    query_queue = []
+    print(f'number of prompts: {len(request_text)}')
     for t in request_text:
         #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
         req_max_new_tokens = max_new_tokens
-        query_queue.append((t, req_max_new_tokens))
+        query_queue.put((t, req_max_new_tokens))
 
-    result_queue = _run_sequential(deployment_name, warmup, query_queue)
+    # Tokenizers must be initialized after fork.
+    # So we need to fork before putting inputs to the queue.
+    # We need this barrier to stop child processse from taking inputs before the main process puts them
+    barrier.wait()
+    # This barrier is to make sure that all clients have finished warmup
+    barrier.wait()
 
     response_details = []
     while len(response_details) < num_queries:
         res = result_queue.get()
-        print(res)
         # vLLM returns concatinated tokens
         if vllm:
             all_tokens = tokenizer.tokenize(res.generated_tokens)
             res.generated_tokens = all_tokens[len(tokenizer.tokenize(res.prompt)):]
         else:
-            tokens = tokenizer.tokenize(res.generated_tokens)
-            res.generated_tokens = tokens
+            res.generated_tokens = tokenizer.encode(res.generated_tokens)
+            res.prompt_tokens = tokenizer.encode(res.prompt)
         response_details.append(res)
 
     return response_details
