@@ -276,6 +276,10 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
         if vllm:
             all_tokens = tokenizer.tokenize(res.generated_tokens)
             res.generated_tokens = all_tokens[len(tokenizer.tokenize(res.prompt)):]
+        else:
+            tokens = tokenizer.tokenize(res.generated_tokens)
+            res.generated_tokens = tokens
+            print(tokens)
         response_details.append(res)
 
     return response_details
