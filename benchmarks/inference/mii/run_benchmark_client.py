@@ -116,7 +116,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
         # result = client.generate(
         #     input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
         print(result)
-        output_tokens = result.response[0]
+        output_tokens = result.response
 
     return ResponseDetails(
         generated_tokens=output_tokens,
