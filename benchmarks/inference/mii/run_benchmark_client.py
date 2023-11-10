@@ -112,7 +112,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
             streaming_fn=callback)
     else:
         result = client.generate(
-            [input_tokens, input_tokens], max_new_tokens=max_new_tokens, top_p=None)
+            input_tokens, max_new_tokens=max_new_tokens, top_p=None)
         # result = client.generate(
         #     input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
         print(result)
