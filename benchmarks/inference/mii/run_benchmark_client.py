@@ -84,6 +84,7 @@ def call_mii_bulk(client, query_queue, result_queue):
             prompts, max_new_tokens=512, top_p=1.0)
         end_time = time.time()
         latency.append(end_time-start_time)
+        print(calculate_mean(latency))
     print(calculate_mean(latency))
     print(f'bulk latency: {end_time-start_time}')
     # output_tokens = result.response[0]
