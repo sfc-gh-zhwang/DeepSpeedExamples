@@ -79,8 +79,9 @@ def call_mii_bulk(client, query_queue):
     start = time.time()
     result = client.generate(
         prompts, max_new_tokens=512, top_p=1.0)
-    print(f'latency: {time.time()-start}')
+    
     print(result)
+    print(f'latency: {time.time()-start}')
     # output_tokens = result.response[0]
 
     # return ResponseDetails(
