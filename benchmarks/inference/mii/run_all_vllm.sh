@@ -11,7 +11,7 @@ for PARAM_SIZE in ${PARAM_SIZES[@]}; do
     IFS=':' read -ra TP_VALUES <<< ${TP_SIZES[${PARAM_SIZE}]}
     for TP in ${TP_VALUES[@]}; do
         DEPLOYMENT_NAME=vllm-llama2-${PARAM_SIZE}-tp${TP}
-        python -m vllm.entrypoints.api_server --host 127.0.0.1 --port 26500 --tensor-parallel-size ${TP} --model meta-llama/Llama-2-${PARAM_SIZE}-hf &
+        python -m vllm.entrypoints.api_server --host 127.0.0.1 --port 26500 --tensor-parallel-size 8 --model meta-llama/Llama-2-${PARAM_SIZE}-hf &
         sleep 60
 
         DEPLOYMENT_NAME=${DEPLOYMENT_NAME} PROMPT_LENGTH=2600 MAX_NEW_TOKENS=60 VLLM="--vllm" bash ./run_benchmark_client.sh

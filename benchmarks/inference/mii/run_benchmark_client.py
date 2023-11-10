@@ -281,8 +281,9 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
         res = result_queue.get()
         # vLLM returns concatinated tokens
         if vllm:
-            all_tokens = tokenizer.tokenize(res.generated_tokens)
-            res.generated_tokens = all_tokens[len(tokenizer.tokenize(res.prompt)):]
+            all_tokens = tokenizer.encode(res.generated_tokens)
+            res.generated_tokens = all_tokens[len(tokenizer.encode(res.prompt)):]
+            res.prompt_tokens = tokenizer.encode(res.prompt)
         else:
             res.generated_tokens = tokenizer.encode(res.generated_tokens)
             res.prompt_tokens = tokenizer.encode(res.prompt)
