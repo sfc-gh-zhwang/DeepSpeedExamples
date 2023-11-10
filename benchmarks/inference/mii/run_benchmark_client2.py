@@ -223,21 +223,19 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
 
 
 def _run_sequential(deployment_name, warmup, query_queue):
-    import mii
-    client = mii.client(deployment_name)
-
-    for i in range(warmup):
-        input_tokens, req_max_new_tokens = query_queue[i]
-        call_mii(client, input_tokens, req_max_new_tokens, stream=False)
-
     query_queue = query_queue[warmup:]
     result_queue = multiprocessing.Queue()
+    import mii
     with multiprocessing.Manager():
         processes = []
         for i in range(len(query_queue)):
             input_tokens, req_max_new_tokens = query_queue[i]
             process = multiprocessing.Process(target=call_mii, args=(
-                client, input_tokens, req_max_new_tokens, False, result_queue))
+                mii.client(deployment_name),
+                input_tokens,
+                req_max_new_tokens,
+                False,
+                result_queue))
             processes.append(process)
             process.start()
 
