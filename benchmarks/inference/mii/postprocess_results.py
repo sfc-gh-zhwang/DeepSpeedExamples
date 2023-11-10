@@ -61,7 +61,6 @@ def read_json(file_path):
 
 
 def get_summary(args, response_details):
-    print(response_details)
     client_num = args["client_num"]
 
     # Calculate latency and throughput using P95 latency
