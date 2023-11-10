@@ -199,7 +199,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
         if vllm:
             call_vllm(input_tokens, req_max_new_tokens, stream)
         else:
-            call_mii(client, input_tokens, req_max_new_tokens, stream)
+            call_mii(client, input_tokens, req_max_new_tokens, stream, result_queue=None)
 
     barrier.wait()
 
