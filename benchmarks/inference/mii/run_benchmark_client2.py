@@ -269,7 +269,8 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     result_queue = _run_sequential(deployment_name, warmup, query_queue)
 
     response_details = []
-    for res in result_queue:
+    while len(response_details) < num_queries:
+        res = result_queue.get()
         print(res)
         # vLLM returns concatinated tokens
         if vllm:
