@@ -74,8 +74,10 @@ def get_summary(args, response_details):
     start_time = min([r.start_time for r in response_details])
     end_time = max([r.end_time for r in response_details])
     latency = max([r.end_time - r.start_time for r in response_details])
-    tokens = [len(r.generated_tokens) for r in response_details]
-    print(calculate_stats(tokens))
+    generated_tokens = [len(r.generated_tokens) for r in response_details]
+    prompt_tokens = [len(r.prompt_tokens) for r in response_details]
+    print(f'prompt_tokens: {calculate_stats(prompt_tokens)}')
+    print(f'generated_tokens: {calculate_stats(generated_tokens)}')
     # for i in range(len(response_details)):
     #     r = response_details[i]
     #     print(r.start_time, r.end_time, r.start_time-r.end_time)
