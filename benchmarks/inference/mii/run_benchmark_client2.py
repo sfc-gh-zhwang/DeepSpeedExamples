@@ -235,6 +235,7 @@ def _run_sequential(deployment_name, warmup, query_queue):
     with multiprocessing.Manager():
         processes = []
         for i in range(len(query_queue)):
+            input_tokens, req_max_new_tokens = query_queue[i]
             process = multiprocessing.Process(target=call_mii, args=(
                 client, input_tokens, req_max_new_tokens, False, result_queue))
             processes.append(process)
