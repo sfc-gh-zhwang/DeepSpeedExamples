@@ -92,7 +92,8 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
             # }
             "name": "Temperature",
             "args": {
-                "temperature": 1.0
+                "temperature": 1.0,
+                "top_p": 1.0,
             }
         },
         "sampler": {
