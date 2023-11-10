@@ -230,16 +230,18 @@ def _run_sequential(deployment_name, warmup, query_queue):
         input_tokens, req_max_new_tokens = query_queue[i]
         call_mii(client, input_tokens, req_max_new_tokens, stream=False)
 
-    #time.sleep(random.uniform(0, client_num) * 0.01)
     query_queue = query_queue[warmup:]
     result_queue = multiprocessing.Queue()
-    try:
+    with multiprocessing.Manager():
+        processes = []
         for i in range(len(query_queue)):
-            input_tokens, req_max_new_tokens = query_queue[i]
-            call_mii(client, input_tokens, req_max_new_tokens, stream=False,
-                     result_queue=result_queue)
-    except queue.Empty:
-        print("queue is empty")
+            process = multiprocessing.Process(target=call_mii, args=(
+                client, input_tokens, req_max_new_tokens, False, result_queue))
+            processes.append(process)
+            process.start()
+
+        for process in processes:
+            process.join()
     return result_queue
 
 def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_queries, warmup, stream, vllm, use_thread=False):
