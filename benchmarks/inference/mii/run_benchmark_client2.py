@@ -235,7 +235,8 @@ def _run_sequential(deployment_name, warmup, query_queue):
     try:
         for i in range(len(query_queue)):
             input_tokens, req_max_new_tokens = query_queue[i]
-            call_mii(client, input_tokens, req_max_new_tokens, stream=False, result_queue)
+            call_mii(client, input_tokens, req_max_new_tokens, stream=False,
+                     result_queue=result_queue)
     except queue.Empty:
         print("queue is empty")
 
