@@ -86,14 +86,14 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
 
     postprocess_config = {
         "logit_processor": {
-            "name": "TopP",
-            "args": {
-                "top_p": 1.0
-            }
-            # "name": "Temperature",
+            # "name": "TopP",
             # "args": {
-            #     "temperature": 1.0
+            #     "top_p": 1.0
             # }
+            "name": "Temperature",
+            "args": {
+                "temperature": None
+            }
         },
         "sampler": {
             "name": "Logits"
