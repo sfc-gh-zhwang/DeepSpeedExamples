@@ -76,7 +76,7 @@ def call_mii_bulk(client, query_queue):
     while not query_queue.empty():
         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
         prompts.append(input_tokens)
-
+    print('generate')
     result = client.generate(
         [prompts[0]], max_new_tokens=512, top_p=1.0)
     print(result)
