@@ -235,7 +235,8 @@ def _run_sequential(deployment_name, warmup, query_queue):
                 input_tokens,
                 req_max_new_tokens,
                 False,
-                result_queue))
+                result_queue)
+            )
             processes.append(process)
             process.start()
 
