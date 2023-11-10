@@ -232,7 +232,7 @@ def _run_sequential(deployment_name, warmup, query_queue, result_queue):
         while not query_queue.empty():
             input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
             r = call_mii(client, input_tokens, req_max_new_tokens, stream=False)
-
+            print(r)
             result_queue.put(r)
     except queue.Empty:
         print("queue is empty")
