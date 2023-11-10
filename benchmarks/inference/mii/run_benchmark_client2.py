@@ -215,10 +215,27 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
             result_queue.put(r)
     except queue.Empty:
         print(f"queue is empty ({pid})")
-
-
     print(f"Worker ({pid}) finished. session_id: {session_id}")
 
+
+def _run_sequential(deployment_name, warmup, query_queue, result_queue):
+    import mii
+    client = mii.client(deployment_name)
+
+    for _ in range(warmup):
+        input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+
+        call_mii(client, input_tokens, req_max_new_tokens, stream=False)
+
+    #time.sleep(random.uniform(0, client_num) * 0.01)
+    try:
+        while not query_queue.empty():
+            input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+            r = call_mii(client, input_tokens, req_max_new_tokens, stream=False)
+
+            result_queue.put(r)
+    except queue.Empty:
+        print("queue is empty")
 
 def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_queries, warmup, stream, vllm, use_thread=False):
     """
@@ -245,11 +262,7 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     query_queue = queue_cls()
     result_queue = queue_cls()
 
-    processes = [runnable_cls(target=_run_parallel,
-                              args=(deployment_name, warmup, barrier, query_queue, result_queue, client_num, stream, vllm))
-                 for i in range(client_num)]
-    for p in processes:
-        p.start()
+    _run_sequential(deployment_name, warmup, query_queue, result_queue)
 
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
