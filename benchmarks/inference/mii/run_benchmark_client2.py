@@ -218,7 +218,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
     print(f"Worker ({pid}) finished. session_id: {session_id}")
 
 
-def _run_sequential(deployment_name, warmup, query_queue, result_queue):
+def _run_sequential(deployment_name, warmup, query_queue):
     import mii
     client = mii.client(deployment_name)
 
@@ -233,7 +233,6 @@ def _run_sequential(deployment_name, warmup, query_queue, result_queue):
             input_tokens, req_max_new_tokens = query_queue[i]
             r = call_mii(client, input_tokens, req_max_new_tokens, stream=False)
             print(r)
-            result_queue.put(r)
     except queue.Empty:
         print("queue is empty")
 
