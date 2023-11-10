@@ -71,19 +71,29 @@ def parse_args():
     return args
 
 
-def call_mii_bulk(client, query_queue):
+def call_mii_bulk(client, query_queue, result_queue):
     prompts = []
     while not query_queue.empty():
         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
         prompts.append(input_tokens)
-    start = time.time()
+    start_time = time.time()
     result = client.generate(
         prompts, max_new_tokens=512, top_p=1.0)
     
     print(result)
-    print(f'latency: {time.time()-start}')
+    end_time = time.time()
+    print(f'latency: {end_time-start_time}')
     # output_tokens = result.response[0]
-
+    for output_tokens in result.response:
+        result_queue.put(
+            ResponseDetails(
+                generated_tokens=output_tokens,
+                prompt=input_tokens,
+                start_time=start_time,
+                end_time=end_time,
+                model_time=0,
+                token_gen_time=0)
+        )
     # return ResponseDetails(
     #     generated_tokens=output_tokens,
     #     prompt=input_tokens,
@@ -226,7 +236,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
             call_mii(client, input_tokens, req_max_new_tokens, stream)
 
     barrier.wait()
-    call_mii_bulk(client, query_queue)
+    call_mii_bulk(client, query_queue, result_queue)
     return
     #time.sleep(random.uniform(0, client_num) * 0.01)
     try:
