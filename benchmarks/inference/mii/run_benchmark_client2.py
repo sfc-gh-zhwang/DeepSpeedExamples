@@ -240,6 +240,7 @@ def _run_sequential(deployment_name, warmup, query_queue):
                      result_queue=result_queue)
     except queue.Empty:
         print("queue is empty")
+    return result_queue
 
 def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_queries, warmup, stream, vllm, use_thread=False):
     """
@@ -265,11 +266,11 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
         req_max_new_tokens = max_new_tokens
         query_queue.append((t, req_max_new_tokens))
 
-    _run_sequential(deployment_name, warmup, query_queue)
+    result_queue = _run_sequential(deployment_name, warmup, query_queue)
 
     response_details = []
-    while len(response_details) < num_queries:
-        res = result_queue.get()
+    for res in result_queue:
+        print(res)
         # vLLM returns concatinated tokens
         if vllm:
             all_tokens = tokenizer.tokenize(res.generated_tokens)
