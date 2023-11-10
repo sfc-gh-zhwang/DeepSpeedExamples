@@ -88,7 +88,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
         "logit_processor": {
             "name": "TopP",
             "args": {
-                "top_p": 1.0
+                "top_p": 0.9
             }
             # "name": "Temperature",
             # "args": {
