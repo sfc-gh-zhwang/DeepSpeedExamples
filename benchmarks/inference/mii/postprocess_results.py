@@ -64,7 +64,7 @@ def get_summary(args, response_details):
     client_num = args["client_num"]
 
     # Calculate latency and throughput using P95 latency
-    latency = mean([r.end_time - r.start_time for r in response_details])
+    latency = max([r.end_time - r.start_time for r in response_details])
     throughput = client_num / latency
 
     tokens_per_sec = mean([(len(get_tokenizer().tokenize(r.prompt)) + len(r.generated_tokens)) / (r.end_time - r.start_time) for r in response_details])
