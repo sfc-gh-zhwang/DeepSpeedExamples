@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from statistics import mean
 from typing import Iterable, List
+from tqdm import tqdm
 
 import numpy as np
 import requests
@@ -19,7 +20,7 @@ from postprocess_results import ResponseDetails, get_summary
 from random_query_generator import RandomQueryGenerator
 from sample_input import all_text
 from transformers import AutoTokenizer
-from utils import get_prompts
+from utils import get_prompts, calculate_mean
 
 MAX_PROMPT_LENGTH = 4000
 PROMPT_LENGTH_VAR = 0.3
@@ -76,12 +77,14 @@ def call_mii_bulk(client, query_queue, result_queue):
     while not query_queue.empty():
         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
         prompts.append(input_tokens)
-    start_time = time.time()
-    result = client.generate(
-        prompts, max_new_tokens=512, top_p=1.0)
-    
-    print(result)
-    end_time = time.time()
+    latency = []
+    for i in tqdm(range(10)):
+        start_time = time.time()
+        result = client.generate(
+            prompts, max_new_tokens=512, top_p=1.0)
+        end_time = time.time()
+        latency.append(end_time-start_time)
+    print(calculate_mean(latency))
     print(f'bulk latency: {end_time-start_time}')
     # output_tokens = result.response[0]
     for input_tokens, output_tokens in zip(prompts, result.response):
