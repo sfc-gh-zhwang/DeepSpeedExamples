@@ -1,5 +1,6 @@
 import csv
 from scipy import stats
+import numpy as np
 
 
 def calculate_mean(data, confidence_level=0.95):
