@@ -55,4 +55,7 @@ def get_prompts(n, r=0.3775):
     Please summarize the text that is given. Return just the summary and no additional conversational dialog such as ""Sure, here is the summary of the text:"".
     <</SYS>> {shrink_sentence(row[0], r)}[/INST]'''
             prompts.append(prompt)
+            n -= 1
+            if n <= 0:
+                break
     return prompts
