@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("-k",
                         "--max_new_tokens",
                         type=int,
-                        default=60,
+                        default=512,
                         help="min and max num tokens argument for huggingface")
     parser.add_argument("-d",
                         "--deployment_name",
@@ -46,12 +46,12 @@ def parse_args():
                         "--warmup",
                         type=int,
                         help="number of queries for warming up",
-                        default=1)
+                        default=0)
     parser.add_argument("-c",
                         "--client_num",
                         type=int,
                         help="number of parallel client processes",
-                        default=2)
+                        default=1)
     parser.add_argument("-l",
                         "--prompt_length",
                         type=int,
