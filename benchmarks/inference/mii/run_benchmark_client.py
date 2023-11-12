@@ -304,8 +304,9 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     request_text = warmup_text + get_prompts(num_queries) 
     print(f'number of prompts: {len(request_text)}')
     for t in request_text:
+        print(t)
         #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
-        req_max_new_tokens = max_new_tokens
+        req_max_new_tokens = 512
         query_queue.put((t, req_max_new_tokens))
 
     # Tokenizers must be initialized after fork.
