@@ -80,10 +80,8 @@ def call_mii_bulk(client, query_queue, result_queue):
     latency = []
     for i in tqdm(range(10)):
         start_time = time.time()
-        print(prompts)
         result = client.generate(
             prompts, max_new_tokens=512, top_p=1.0, temperature=1.0)
-        print(result)
         end_time = time.time()
         latency.append(end_time-start_time)
         print(calculate_mean(latency))
@@ -304,7 +302,6 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     request_text = warmup_text + get_prompts(num_queries) 
     print(f'number of prompts: {len(request_text)}')
     for t in request_text:
-        print(t)
         #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
         req_max_new_tokens = 512
         query_queue.put((t, req_max_new_tokens))
