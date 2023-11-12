@@ -46,7 +46,7 @@ def shrink_sentence(s, r):
 # r=0.3775 -> mean tokens 1024
 # r=0.179 -> mean tokens 512
 # r=0.079 -> mean tokens 256
-def get_prompts(n, r=1.0):
+def get_prompts(n, r):
     prompts = []
     with open('prompts/arxiv.csv', newline='') as file:
         reader = csv.reader(file)
