@@ -78,7 +78,7 @@ def call_mii_bulk(client, query_queue, result_queue):
         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
         prompts.append(input_tokens)
     latency = []
-    for i in tqdm(range(10)):
+    for i in tqdm(range(1)):
         start_time = time.time()
         result = client.generate(
             prompts, max_new_tokens=512, top_p=1.0, temperature=1.0)
