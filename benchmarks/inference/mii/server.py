@@ -38,7 +38,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name",
                         type=str,
-                        default="meta-llama/Llama-2-7b-hf",
+                        default="/models/llama-2-70b-chat-hf",
                         help="Name of the model in the model_files to benchmark")
     parser.add_argument("-d",
                         "--deployment_name",
@@ -51,12 +51,12 @@ def parse_args():
                         "--tensor_parallel",
                         type=int,
                         help="Degree of tensor (model) parallelism",
-                        default=1)
+                        default=8)
     parser.add_argument("-b",
                         "--ragged_batch_size",
                         type=int,
                         help="Max batch size for ragged batching",
-                        default=768)
+                        default=1024)
     parser.add_argument("-r",
                         "--replica_num",
                         type=int,
