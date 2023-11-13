@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("-k",
                         "--max_new_tokens",
                         type=int,
-                        default=512,
+                        default=1024,
                         help="min and max num tokens argument for huggingface")
     parser.add_argument("-d",
                         "--deployment_name",
