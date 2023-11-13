@@ -68,7 +68,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-
+    print(args)
     if args.cmd == "start":
         start_server(args.model_name,
                      args.deployment_name,
