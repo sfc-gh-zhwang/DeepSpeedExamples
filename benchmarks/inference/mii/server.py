@@ -29,6 +29,7 @@ def start_server(model_name,
         inference_engine_config=inference_config,
         replica_num=replica_num
     )
+    print('done')
 
 def stop_server(deployment_name):
     mii.client(deployment_name).terminate_server()
