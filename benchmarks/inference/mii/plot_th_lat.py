@@ -1,10 +1,10 @@
-import glob
-import matplotlib.pyplot as plt
 import argparse
+import glob
 from pathlib import Path
-import numpy as np
 
-from postprocess_results import read_json, get_summary
+import matplotlib.pyplot as plt
+import numpy as np
+from postprocess_results import get_summary, read_json
 
 bs = 768
     

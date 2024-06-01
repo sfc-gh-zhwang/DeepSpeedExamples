@@ -1,26 +1,26 @@
-import os
-import time
-import random
 import argparse
-import queue
+import asyncio
+import json
 import multiprocessing
+import os
+import queue
+import random
 import threading
-from statistics import mean
-from dataclasses import dataclass, asdict
-from typing import List, Iterable
-from pathlib import Path
+import time
+from dataclasses import asdict, dataclass
 from datetime import datetime
-import numpy as np
+from pathlib import Path
+from statistics import mean
+from typing import Iterable, List
+from tqdm import tqdm
 
-from transformers import AutoTokenizer
+import numpy as np
+import requests
+from postprocess_results import ResponseDetails, get_summary
 from random_query_generator import RandomQueryGenerator
 from sample_input import all_text
-import time
-import json
-import asyncio
-import requests
-
-from postprocess_results import get_summary, ResponseDetails
+from transformers import AutoTokenizer
+from utils import get_prompts, calculate_mean
 
 MAX_PROMPT_LENGTH = 4000
 PROMPT_LENGTH_VAR = 0.3
@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("-k",
                         "--max_new_tokens",
                         type=int,
-                        default=60,
+                        default=1024,
                         help="min and max num tokens argument for huggingface")
     parser.add_argument("-d",
                         "--deployment_name",
@@ -46,12 +46,12 @@ def parse_args():
                         "--warmup",
                         type=int,
                         help="number of queries for warming up",
-                        default=1)
+                        default=0)
     parser.add_argument("-c",
                         "--client_num",
                         type=int,
                         help="number of parallel client processes",
-                        default=2)
+                        default=1)
     parser.add_argument("-l",
                         "--prompt_length",
                         type=int,
@@ -59,12 +59,54 @@ def parse_args():
     parser.add_argument('--use_thread', action='store_true',
                         help='use thread to run parallel clients, otherwise use multiprocessing',
                         default=False)
-    parser.add_argument('--stream', action='store_true', default=True)
+    parser.add_argument('--stream', action='store_true', default=False)
     parser.add_argument('--vllm', action='store_true', default=False)
     parser.add_argument('-o', '--out_json_path', type=Path, default=None)
 
     args = parser.parse_args()
+
+    print('\n=============== Argument ===============')
+    for key in vars(args):
+        print('{}: {}'.format(key, vars(args)[key]))
+    print('========================================')
     return args
+
+
+def call_mii_bulk(client, query_queue, result_queue):
+    prompts = []
+    while not query_queue.empty():
+        input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
+        prompts.append(input_tokens)
+    latency = []
+    print(prompts)
+    for i in range(5):
+        start_time = time.time()
+        print(f'{i}th round')
+        result = client.generate(
+            prompts, max_new_tokens=100, top_p=1.0, temperature=1.0)
+        end_time = time.time()
+        latency.append(end_time-start_time)
+        print(calculate_mean(latency))
+    print(calculate_mean(latency))
+    print(f'bulk latency: {end_time-start_time}')
+    # output_tokens = result.response[0]
+    for input_tokens, output_tokens in zip(prompts, result.response):
+        result_queue.put(
+            ResponseDetails(
+                generated_tokens=output_tokens,
+                prompt=input_tokens,
+                start_time=start_time,
+                end_time=end_time,
+                model_time=0,
+                token_gen_time=0)
+        )
+    # return ResponseDetails(
+    #     generated_tokens=output_tokens,
+    #     prompt=input_tokens,
+    #     start_time=start_time,
+    #     end_time=time.time(),
+    #     model_time=0,
+    #     token_gen_time=token_gen_time)
 
 
 def call_mii(client, input_tokens, max_new_tokens, stream):
@@ -108,7 +150,11 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
             streaming_fn=callback)
     else:
         result = client.generate(
-            input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
+            input_tokens, max_new_tokens=max_new_tokens, top_p=1.0)
+        # result = client.generate(
+        #     input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
+        # print(result)
+        # print(type(result.response))
         output_tokens = result.response[0]
 
     return ResponseDetails(
@@ -196,8 +242,9 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
             call_mii(client, input_tokens, req_max_new_tokens, stream)
 
     barrier.wait()
-
-    time.sleep(random.uniform(0, client_num) * 0.01)
+    call_mii_bulk(client, query_queue, result_queue)
+    return
+    #time.sleep(random.uniform(0, client_num) * 0.01)
     try:
         while not query_queue.empty():
             print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
@@ -212,6 +259,7 @@ def _run_parallel(deployment_name, warmup, barrier, query_queue, result_queue, c
             result_queue.put(r)
     except queue.Empty:
         print(f"queue is empty ({pid})")
+
 
     print(f"Worker ({pid}) finished. session_id: {session_id}")
 
@@ -247,13 +295,17 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
     for p in processes:
         p.start()
 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     MAX_PROMPT_LENGTH = 4000
-    request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
-
+    #request_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, num_queries + warmup*client_num)
+    warmup_text = query_generator.get_random_request_text(prompt_length, prompt_length*PROMPT_LENGTH_VAR, MAX_PROMPT_LENGTH, warmup*client_num)
+    request_text = warmup_text + get_prompts(num_queries)*client_num
+    print(f'number of prompts: {len(request_text)}')
     for t in request_text:
-        req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
+        #req_max_new_tokens = int(np.random.normal(max_new_tokens, MAX_NEW_TOKENS_VAR*max_new_tokens))
+        req_max_new_tokens = 512
         query_queue.put((t, req_max_new_tokens))
 
     # Tokenizers must be initialized after fork.
@@ -268,8 +320,12 @@ def run_client(client_num, deployment_name, prompt_length, max_new_tokens, num_q
         res = result_queue.get()
         # vLLM returns concatinated tokens
         if vllm:
-            all_tokens = tokenizer.tokenize(res.generated_tokens)
-            res.generated_tokens = all_tokens[len(tokenizer.tokenize(res.prompt)):]
+            all_tokens = tokenizer.encode(res.generated_tokens)
+            res.generated_tokens = all_tokens[len(tokenizer.encode(res.prompt)):]
+            res.prompt_tokens = tokenizer.encode(res.prompt)
+        else:
+            res.generated_tokens = tokenizer.encode(res.generated_tokens)
+            res.prompt_tokens = tokenizer.encode(res.prompt)
         response_details.append(res)
 
     return response_details

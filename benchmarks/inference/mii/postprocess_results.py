@@ -1,14 +1,13 @@
 import argparse
-from pathlib import Path
 import json
-import numpy as np
-from statistics import mean
-from functools import reduce
 from dataclasses import dataclass
+from functools import reduce
+from pathlib import Path
+from statistics import mean
 from typing import List
 
+import numpy as np
 from transformers import AutoTokenizer
-
 
 tokenizer = None
 
@@ -43,7 +42,8 @@ def parse_args():
 def get_tokenizer():
     global tokenizer
     if tokenizer is None:
-        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+        #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+        tokenizer = AutoTokenizer.from_pretrained("/models/llama-2-70b-chat-hf")
     return tokenizer    
 
 
@@ -60,18 +60,35 @@ def read_json(file_path):
     return args, response_details
 
 
+def calculate_stats(lt):
+    _max = max(lt)
+    _min = min(lt)
+    mean = sum(lt)//len(lt)
+    return f'min: {_min}, max: {_max}, mean: {mean}'
+
+
 def get_summary(args, response_details):
     client_num = args["client_num"]
 
     # Calculate latency and throughput using P95 latency
-    latency = mean([r.end_time - r.start_time for r in response_details])
+    start_time = min([r.start_time for r in response_details])
+    end_time = max([r.end_time for r in response_details])
+    latency = max([r.end_time - r.start_time for r in response_details])
+    generated_tokens = [len(r.generated_tokens) for r in response_details]
+    prompt_tokens = [len(r.prompt_tokens) for r in response_details]
+    print(f'prompt_tokens: {calculate_stats(prompt_tokens)}')
+    print(f'generated_tokens: {calculate_stats(generated_tokens)}')
+    # for i in range(len(response_details)):
+    #     r = response_details[i]
+    #     print(r.start_time, r.end_time, r.start_time-r.end_time)
+    print(f'real latency: {end_time-start_time}')
     throughput = client_num / latency
 
     tokens_per_sec = mean([(len(get_tokenizer().tokenize(r.prompt)) + len(r.generated_tokens)) / (r.end_time - r.start_time) for r in response_details])
-    first_token_latency = mean([r.token_gen_time[0] for r in response_details])
+    first_token_latency = 0  # mean([r.token_gen_time[0] for r in response_details])
 
-    token_gen_latency_flat = reduce(list.__add__, [r.token_gen_time[1:-1] for r in response_details if len(r.token_gen_time) > 2])
-    token_gen_latency = mean([t for t in token_gen_latency_flat])
+    token_gen_latency_flat = 0  # reduce(list.__add__, [r.token_gen_time[1:-1] for r in response_details if len(r.token_gen_time) > 2])
+    token_gen_latency = 0  # mean([t for t in token_gen_latency_flat])
 
     return ProfilingSummary(throughput, latency, token_gen_latency, first_token_latency, tokens_per_sec)
 

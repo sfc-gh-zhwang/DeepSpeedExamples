@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-# DeepSpeed Team
-import mii
 import argparse
 
+# DeepSpeed Team
+import mii
+from deepspeed.inference import DeepSpeedTPConfig, RaggedInferenceEngineConfig
+from deepspeed.inference.v2.ragged import DSStateManagerConfig
 from mii.constants import DeploymentType
 
-from deepspeed.inference import RaggedInferenceEngineConfig, DeepSpeedTPConfig
-from deepspeed.inference.v2.ragged import DSStateManagerConfig
 
 def start_server(model_name,
                  deployment_name,
@@ -29,6 +29,7 @@ def start_server(model_name,
         inference_engine_config=inference_config,
         replica_num=replica_num
     )
+    print('done')
 
 def stop_server(deployment_name):
     mii.client(deployment_name).terminate_server()
@@ -38,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name",
                         type=str,
-                        default="meta-llama/Llama-2-7b-hf",
+                        default="/models/llama-2-70b-chat-hf",
                         help="Name of the model in the model_files to benchmark")
     parser.add_argument("-d",
                         "--deployment_name",
@@ -51,12 +52,12 @@ def parse_args():
                         "--tensor_parallel",
                         type=int,
                         help="Degree of tensor (model) parallelism",
-                        default=1)
+                        default=8)
     parser.add_argument("-b",
                         "--ragged_batch_size",
                         type=int,
                         help="Max batch size for ragged batching",
-                        default=768)
+                        default=1024)
     parser.add_argument("-r",
                         "--replica_num",
                         type=int,
@@ -68,7 +69,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-
+    print(args)
     if args.cmd == "start":
         start_server(args.model_name,
                      args.deployment_name,
